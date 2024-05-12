@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { ScrollView, Text, StyleSheet } from "react-native";
+import TownWeatherItem from "../components/WeatherTownItem";
 
 export default function HomeScreen({ city, location, errorMsg, towns }) {
   return (
@@ -9,7 +10,10 @@ export default function HomeScreen({ city, location, errorMsg, towns }) {
         <Text style={styles.error}>Error: {errorMsg}</Text>
       ) : (
         <>
-          {city && <Text style={styles.info}>City: {city}</Text>}
+          {city && <Text style={styles.info}>City: {city.city}</Text>}
+          {city && (
+            <Text style={styles.info}>Postal Code: {city.postalCode}</Text>
+          )}
           {location && (
             <Text style={styles.info}>
               Coordinates: {location.coords.latitude},{" "}
@@ -20,10 +24,7 @@ export default function HomeScreen({ city, location, errorMsg, towns }) {
             <>
               <Text style={styles.subTitle}>Nearby Towns:</Text>
               {towns.map((town, index) => (
-                <View key={index} style={styles.townContainer}>
-                  <Text style={styles.townName}>{town.name}</Text>
-                  <Text style={styles.townDetails}>{town.vicinity}</Text>
-                </View>
+                <TownWeatherItem key={index} town={town} />
               ))}
             </>
           ) : (
@@ -41,55 +42,40 @@ export default function HomeScreen({ city, location, errorMsg, towns }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5", // Light grey background for the entire view
+    backgroundColor: "#f0f4f8",
     padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "bold",
-    color: "#333", // Dark text for better readability
-    marginBottom: 15,
+    color: "#20315f",
+    marginBottom: 20,
+    textAlign: "center",
   },
   subTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "500",
-    color: "#444", // Medium grey for subtitles
-    marginTop: 20,
+    color: "#305f72",
+    marginTop: 30,
     marginBottom: 10,
+    textAlign: "center",
   },
   info: {
     fontSize: 16,
-    color: "#666", // Light grey for informational text
+    color: "#4a6572",
     marginBottom: 5,
-  },
-  townContainer: {
-    backgroundColor: "#fff", // White background for town items
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3, // Android shadow
-  },
-  townName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333", // Dark text for town name
-  },
-  townDetails: {
-    fontSize: 14,
-    color: "#666", // Light grey for details
+    textAlign: "center",
   },
   error: {
-    fontSize: 16,
-    color: "red", // Red for errors
+    fontSize: 18,
+    color: "red",
     marginBottom: 10,
+    textAlign: "center",
   },
   waiting: {
-    fontSize: 16,
-    color: "blue", // Blue for the waiting message
+    fontSize: 18,
+    color: "#305f72",
     marginTop: 10,
+    textAlign: "center",
   },
 });

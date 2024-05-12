@@ -25,11 +25,12 @@ function App() {
             `/nearby-places?latitude=${location.coords.latitude}&longitude=${location.coords.longitude}`
           );
           console.log("API Test Successful, response:", response);
-          const townsData = response.data.results.map((town) => ({
-            name: town.name,
-            vicinity: town.vicinity,
-            latitude: town.geometry.location.lat,
-            longitude: town.geometry.location.lng,
+          const townsData = response.data.results.map((place) => ({
+            name: place.name,
+            vicinity: place.vicinity,
+            latitude: place.geometry.location.lat,
+            longitude: place.geometry.location.lng,
+            postalCode: place.postalCode, // Update this if the backend response structure changes
           }));
           setTowns(townsData);
         } catch (err) {
@@ -51,14 +52,28 @@ function App() {
       );
       const data = await response.json();
 
+      console.log("REVERSE", data);
+
       if (data.status === "OK") {
         const addressComponents = data.results[0].address_components;
+
+        // Find the relevant components like locality (city) and postal code
         const localityComponent = addressComponents.find((component) =>
           component.types.includes("locality")
         );
-        return localityComponent
+        const postalCodeComponent = addressComponents.find((component) =>
+          component.types.includes("postal_code")
+        );
+
+        // Extract city and postal code from the components
+        const city = localityComponent
           ? localityComponent.long_name
-          : "Unknown location";
+          : "Unknown city";
+        const postalCode = postalCodeComponent
+          ? postalCodeComponent.long_name
+          : "Unknown ZIP code";
+
+        return { city, postalCode };
       } else {
         throw new Error("Reverse geocoding failed");
       }
