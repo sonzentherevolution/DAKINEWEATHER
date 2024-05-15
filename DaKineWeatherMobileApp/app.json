@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "DaKineWeatherMobileApp",
-    "slug": "DaKineWeatherMobileApp",
+    "slug": "dakineweather",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,16 +13,34 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.DaKineWeatherMobileApp",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.104945471738-ql6skeml8mrnbg5s33cmlenb1niu31lm"
+            ]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.DaKineWeatherMobileApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "scheme": "dakineweather",
+    "extra": {
+      "eas": {
+        "projectId": "81c4f994-aebe-42c2-9ed2-5af9d2179ae9"
+      }
+    },
+    "owner": "laydenfdiaz"
   }
 }

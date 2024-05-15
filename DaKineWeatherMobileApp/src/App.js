@@ -1,13 +1,19 @@
-import * as React from "react";
+import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { useState, useEffect } from "react";
 import HomeScreen from "./screens/HomeScreen";
+import SignInScreen from "./screens/SignInScreen";
+import WeatherDetailScreen from "./screens/WeatherDetailScreen";
 import * as Location from "expo-location";
 import { registerRootComponent } from "expo";
-import { Text, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "./api/app";
-import { GOOGLE_API } from "@env";
+import { AuthProvider } from "./context/AuthContext";
+import { GOOGLE_API, OAUTH_WEB_CLIENT_ID, OAUTH_IOS_CLIENT_ID } from "@env";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+
+WebBrowser.maybeCompleteAuthSession();
 
 const Stack = createStackNavigator();
 
@@ -15,72 +21,35 @@ function App() {
   const [location, setLocation] = useState(null);
   const [city, setCity] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
-  const [towns, setTowns] = useState([]); // State to store the list of towns
+  const [towns, setTowns] = useState([]);
+  const [userToken, setUserToken] = useState(null);
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: OAUTH_IOS_CLIENT_ID,
+    webClientId: OAUTH_WEB_CLIENT_ID,
+  });
 
   useEffect(() => {
-    const fetchNearbyPlaces = async () => {
-      if (location) {
-        try {
-          const response = await api.get(
-            `/nearby-places?latitude=${location.coords.latitude}&longitude=${location.coords.longitude}`
-          );
-          console.log("API Test Successful, response:", response);
-          const townsData = response.data.results.map((place) => ({
-            name: place.name,
-            vicinity: place.vicinity,
-            latitude: place.geometry.location.lat,
-            longitude: place.geometry.location.lng,
-            postalCode: place.postalCode, // Update this if the backend response structure changes
-          }));
-          setTowns(townsData);
-        } catch (err) {
-          console.error("API Test Failed:", err);
-          setErrorMsg("Failed to fetch nearby places");
-        }
+    AsyncStorage.getItem("userToken").then((token) => {
+      if (token) {
+        console.log("Existing token found:", token);
+        setUserToken(token);
       }
-    };
+    });
+  }, []);
 
-    fetchNearbyPlaces();
-  }, [location]); // useEffect will trigger when location changes
-
-  const GOOGLE_MAPS_API_KEY = GOOGLE_API;
-
-  const reverseGeocode = async (latitude, longitude) => {
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { authentication } = response;
+      console.log(
+        "New authentication token received:",
+        authentication.accessToken
       );
-      const data = await response.json();
-
-      console.log("REVERSE", data);
-
-      if (data.status === "OK") {
-        const addressComponents = data.results[0].address_components;
-
-        // Find the relevant components like locality (city) and postal code
-        const localityComponent = addressComponents.find((component) =>
-          component.types.includes("locality")
-        );
-        const postalCodeComponent = addressComponents.find((component) =>
-          component.types.includes("postal_code")
-        );
-
-        // Extract city and postal code from the components
-        const city = localityComponent
-          ? localityComponent.long_name
-          : "Unknown city";
-        const postalCode = postalCodeComponent
-          ? postalCodeComponent.long_name
-          : "Unknown ZIP code";
-
-        return { city, postalCode };
-      } else {
-        throw new Error("Reverse geocoding failed");
-      }
-    } catch (error) {
-      throw new Error("Reverse geocoding failed");
+      AsyncStorage.setItem("userToken", authentication.accessToken).then(() => {
+        setUserToken(authentication.accessToken);
+      });
     }
-  };
+  }, [response]);
 
   useEffect(() => {
     (async () => {
@@ -89,15 +58,14 @@ function App() {
         setErrorMsg("Permission to access location was denied");
         return;
       }
+      let currentLocation = await Location.getCurrentPositionAsync({});
+      setLocation(currentLocation);
 
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
-
-      if (location) {
+      if (currentLocation) {
         try {
           const city = await reverseGeocode(
-            location.coords.latitude,
-            location.coords.longitude
+            currentLocation.coords.latitude,
+            currentLocation.coords.longitude
           );
           setCity(city);
         } catch (error) {
@@ -107,22 +75,85 @@ function App() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (location) {
+      const fetchNearbyPlaces = async () => {
+        try {
+          const response = await api.get(
+            `/nearby-places?latitude=${location.coords.latitude}&longitude=${location.coords.longitude}`
+          );
+          setTowns(
+            response.data.results.map((place) => ({
+              name: place.name,
+              vicinity: place.vicinity,
+              latitude: place.geometry.location.lat,
+              longitude: place.geometry.location.lng,
+              postalCode: place.postalCode,
+            }))
+          );
+        } catch (error) {
+          console.error("API Test Failed:", error);
+          setErrorMsg("Failed to fetch nearby places");
+        }
+      };
+      fetchNearbyPlaces();
+    }
+  }, [location]);
+
+  const reverseGeocode = async (latitude, longitude) => {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_API}`
+      );
+      const data = await response.json();
+      if (data.status === "OK") {
+        const addressComponents = data.results[0].address_components;
+        const localityComponent = addressComponents.find((component) =>
+          component.types.includes("locality")
+        );
+        const postalCodeComponent = addressComponents.find((component) =>
+          component.types.includes("postal_code")
+        );
+        return {
+          city: localityComponent
+            ? localityComponent.long_name
+            : "Unknown city",
+          postalCode: postalCodeComponent
+            ? postalCodeComponent.long_name
+            : "Unknown ZIP code",
+        };
+      } else {
+        throw new Error("Reverse geocoding failed");
+      }
+    } catch (error) {
+      throw new Error("Reverse geocoding failed");
+    }
+  };
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen name="Home">
-          {(props) => (
-            <HomeScreen
-              {...props}
-              location={location}
-              city={city}
-              errorMsg={errorMsg}
-              towns={towns} // Passing the towns data as a prop to HomeScreen
-            />
-          )}
-        </Stack.Screen>
-      </Stack.Navigator>
-    </NavigationContainer>
+    <AuthProvider>
+      <NavigationContainer>
+        <Stack.Navigator>
+          <Stack.Screen
+            name="SignIn"
+            component={SignInScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen name="Home">
+            {(props) => (
+              <HomeScreen
+                {...props}
+                location={location}
+                city={city}
+                errorMsg={errorMsg}
+                towns={towns} // Passing towns as a prop to HomeScreen
+              />
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="WeatherDetails" component={WeatherDetailScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </AuthProvider>
   );
 }
 

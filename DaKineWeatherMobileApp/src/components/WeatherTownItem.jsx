@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
-import api from "../api/app"; // Assuming api is imported from a separate file
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import api from "../api/app";
 
-const TownWeatherItem = ({ town, city }) => {
+const TownWeatherItem = ({ town, navigation }) => {
   const [weatherData, setWeatherData] = useState(null);
 
   useEffect(() => {
     const fetchWeather = async () => {
       if (town) {
-        const modifiedTownName = town.name.replace(/ʻ/g, "'"); // Replace ʻokina with apostrophe
-        const encodedTownName = encodeURIComponent(modifiedTownName); // Encode the town name
+        const modifiedTownName = town.name.replace(/ʻ/g, "'");
+        const encodedTownName = encodeURIComponent(modifiedTownName);
 
         try {
           const response = await api.get(
@@ -25,6 +25,10 @@ const TownWeatherItem = ({ town, city }) => {
 
     fetchWeather();
   }, [town]);
+
+  const convertCelsiusToFahrenheit = (celsius) => {
+    return (celsius * 9) / 5 + 32;
+  };
 
   const getWeatherStyles = (weather) => {
     switch (weather) {
@@ -44,33 +48,39 @@ const TownWeatherItem = ({ town, city }) => {
   };
 
   return (
-    <View
-      style={[
-        styles.townContainer,
-        weatherData ? getWeatherStyles(weatherData.weather[0].main) : {},
-      ]}
+    <TouchableOpacity
+      onPress={() =>
+        navigation.navigate("WeatherDetails", { town, weatherData })
+      }
     >
-      <Text style={styles.townName}>{town.name}</Text>
-      <Text style={styles.townDetails}>{town.vicinity}</Text>
-      <Text style={styles.postalCode}>{town.postal}</Text>
-      {weatherData && (
-        <View>
-          <Text style={styles.townDetails}>
-            Temperature: {weatherData.main.temp}°C
-          </Text>
-          <Text style={styles.townDetails}>
-            Weather: {weatherData.weather[0].description}
-          </Text>
-          {/* Displaying weather icon */}
-          <Image
-            style={styles.weatherIcon}
-            source={{
-              uri: `http://openweathermap.org/img/wn/${weatherData.weather[0].icon}.png`,
-            }}
-          />
-        </View>
-      )}
-    </View>
+      <View
+        style={[
+          styles.townContainer,
+          weatherData ? getWeatherStyles(weatherData.weather[0].main) : {},
+        ]}
+      >
+        <Text style={styles.townName}>{town.name}</Text>
+        <Text style={styles.townDetails}>{town.vicinity}</Text>
+        <Text style={styles.postalCode}>{town.postal}</Text>
+        {weatherData && (
+          <View>
+            <Text style={styles.townDetails}>
+              Temperature:{" "}
+              {convertCelsiusToFahrenheit(weatherData.main.temp).toFixed(1)}°F
+            </Text>
+            <Text style={styles.townDetails}>
+              Weather: {weatherData.weather[0].description}
+            </Text>
+            <Image
+              style={styles.weatherIcon}
+              source={{
+                uri: `http://openweathermap.org/img/wn/${weatherData.weather[0].icon}.png`,
+              }}
+            />
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
   );
 };
 
