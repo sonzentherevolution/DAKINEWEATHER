@@ -5,6 +5,8 @@ import api from "../api/app";
 const TownWeatherItem = ({ town, navigation }) => {
   const [weatherData, setWeatherData] = useState(null);
 
+  console.log("Rendering WeatherTownItem:", town.name); // Check if the component is being rendered
+
   useEffect(() => {
     const fetchWeather = async () => {
       if (town) {
@@ -15,7 +17,7 @@ const TownWeatherItem = ({ town, navigation }) => {
           const response = await api.get(
             `/weather-by-town?townName=${encodedTownName}`
           );
-          console.log("API Test Successful, response:", response);
+          // console.log("API Test Successful, response:", response);
           setWeatherData(response.data);
         } catch (error) {
           console.error("API Error:", error);

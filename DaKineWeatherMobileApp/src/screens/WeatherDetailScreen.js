@@ -1,11 +1,35 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, Button } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const WeatherDetailScreen = ({ route }) => {
-  const { town, weatherData } = route.params; // Extract weatherData from the navigation parameters
+  const { town, weatherData } = route.params;
 
   const convertCelsiusToFahrenheit = (celsius) => {
     return (celsius * 9) / 5 + 32;
+  };
+
+  const handleVote = async (condition) => {
+    const voteData = {
+      condition,
+      townName: town.name,
+      timestamp: new Date(),
+    };
+
+    const guestId = await AsyncStorage.getItem("guestId");
+    fetch("/vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guestId, voteData }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          console.log("Vote recorded");
+        } else {
+          console.error("Vote failed:", data.message);
+        }
+      });
   };
 
   return (
@@ -32,6 +56,10 @@ const WeatherDetailScreen = ({ route }) => {
               uri: `http://openweathermap.org/img/wn/${weatherData.weather[0].icon}.png`,
             }}
           />
+          <Button
+            title="Vote for this condition"
+            onPress={() => handleVote(weatherData.weather[0].description)}
+          />
         </>
       ) : (
         <Text>No weather data available.</Text>
@@ -43,7 +71,7 @@ const WeatherDetailScreen = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f0f4f8", // Light grey background
+    backgroundColor: "#f0f4f8",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -52,18 +80,18 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "bold",
     marginBottom: 20,
-    color: "#20315f", // Dark blue for text
+    color: "#20315f",
   },
   weatherDetails: {
     fontSize: 18,
-    color: "#20315f", // Dark text for readability
+    color: "#20315f",
     marginBottom: 10,
-    textAlign: "center", // Center align text for better aesthetics
+    textAlign: "center",
   },
   weatherIcon: {
     width: 100,
     height: 100,
-    marginBottom: 20, // Add some space below the icon
+    marginBottom: 20,
   },
 });
 

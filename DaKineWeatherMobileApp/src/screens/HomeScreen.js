@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   ScrollView,
   Text,
@@ -8,7 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import WeatherTownItem from "../components/WeatherTownItem"; // Corrected component name
+import WeatherTownItem from "../components/WeatherTownItem";
 
 export default function HomeScreen({
   navigation,
@@ -19,8 +19,24 @@ export default function HomeScreen({
   onRefresh,
 }) {
   const [refreshing, setRefreshing] = useState(false);
+  const [guestId, setGuestId] = useState(null);
+  const [userToken, setUserToken] = useState(null);
 
-  const handleRefresh = React.useCallback(() => {
+  useEffect(() => {
+    AsyncStorage.getItem("userToken").then((token) => {
+      setUserToken(token);
+      if (!token) {
+        AsyncStorage.getItem("guestId").then((id) => {
+          setGuestId(id);
+          if (id) {
+            console.log("Guest ID:", id); // Log the guest ID to the console
+          }
+        });
+      }
+    });
+  }, []);
+
+  const handleRefresh = useCallback(() => {
     setRefreshing(true);
     onRefresh?.().finally(() => setRefreshing(false));
   }, [onRefresh]);
@@ -28,6 +44,9 @@ export default function HomeScreen({
   // Function to handle user sign out
   const handleSignOut = async () => {
     await AsyncStorage.removeItem("userToken");
+    await AsyncStorage.removeItem("guestId");
+    setUserToken(null);
+    setGuestId(null);
     navigation.navigate("SignIn");
   };
 
