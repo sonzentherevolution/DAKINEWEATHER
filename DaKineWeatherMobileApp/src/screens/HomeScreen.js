@@ -5,7 +5,8 @@ import {
   StyleSheet,
   SafeAreaView,
   RefreshControl,
-  Pressable,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import WeatherTownItem from "../components/WeatherTownItem";
@@ -29,7 +30,7 @@ export default function HomeScreen({
         AsyncStorage.getItem("guestId").then((id) => {
           setGuestId(id);
           if (id) {
-            console.log("Guest ID:", id); // Log the guest ID to the console
+            console.log("Guest ID:", id);
           }
         });
       }
@@ -41,7 +42,6 @@ export default function HomeScreen({
     onRefresh?.().finally(() => setRefreshing(false));
   }, [onRefresh]);
 
-  // Function to handle user sign out
   const handleSignOut = async () => {
     await AsyncStorage.removeItem("userToken");
     await AsyncStorage.removeItem("guestId");
@@ -58,34 +58,42 @@ export default function HomeScreen({
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        <Pressable style={styles.button} onPress={handleSignOut}>
-          <Text style={styles.buttonText}>Sign Out</Text>
-        </Pressable>
-        <Text style={styles.title}>Weather Overview</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Weather Overview</Text>
+          <TouchableOpacity style={styles.button} onPress={handleSignOut}>
+            <Text style={styles.buttonText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
+
         {errorMsg ? (
           <Text style={styles.error}>Error: {errorMsg}</Text>
         ) : (
           <>
-            {city && <Text style={styles.info}>City: {city.city}</Text>}
-            {city && (
-              <Text style={styles.info}>Postal Code: {city.postalCode}</Text>
-            )}
-            {location && (
-              <Text style={styles.info}>
-                Coordinates: {location.coords.latitude},{" "}
-                {location.coords.longitude}
-              </Text>
-            )}
+            <View style={styles.locationInfo}>
+              {city && <Text style={styles.info}>City: {city.city}</Text>}
+              {city && (
+                <Text style={styles.info}>Postal Code: {city.postalCode}</Text>
+              )}
+              {location && (
+                <Text style={styles.info}>
+                  Coordinates: {location.coords.latitude},{" "}
+                  {location.coords.longitude}
+                </Text>
+              )}
+            </View>
+
             {towns && towns.length > 0 ? (
               <>
                 <Text style={styles.subTitle}>Nearby Towns:</Text>
-                {towns.map((town, index) => (
-                  <WeatherTownItem
-                    key={index}
-                    town={town}
-                    navigation={navigation}
-                  />
-                ))}
+                <View style={styles.townList}>
+                  {towns.map((town, index) => (
+                    <WeatherTownItem
+                      key={index}
+                      town={town}
+                      navigation={navigation}
+                    />
+                  ))}
+                </View>
               </>
             ) : (
               <Text style={styles.waiting}>Waiting for location...</Text>
@@ -107,38 +115,43 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f4f8",
     paddingHorizontal: 20,
   },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginVertical: 20,
+  },
   button: {
     backgroundColor: "#1a73e8",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
     borderRadius: 5,
-    alignItems: "center",
-    marginVertical: 10,
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
   },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#20315f",
+  },
+  locationInfo: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
     marginBottom: 20,
-    textAlign: "center",
   },
   subTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "500",
     color: "#305f72",
-    marginTop: 30,
     marginBottom: 10,
-    textAlign: "center",
   },
   info: {
     fontSize: 16,
     color: "#4a6572",
     marginBottom: 5,
-    textAlign: "center",
   },
   error: {
     fontSize: 18,
@@ -151,5 +164,8 @@ const styles = StyleSheet.create({
     color: "#305f72",
     marginTop: 10,
     textAlign: "center",
+  },
+  townList: {
+    marginBottom: 20,
   },
 });

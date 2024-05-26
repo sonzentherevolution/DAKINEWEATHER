@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
+import { View, Text, StyleSheet, Pressable, Alert, Image } from "react-native";
 import * as Google from "expo-auth-session/providers/google";
 import { useAuth } from "../context/AuthContext";
 import { OAUTH_WEB_CLIENT_ID, OAUTH_IOS_CLIENT_ID } from "@env";
@@ -65,6 +65,12 @@ const SignInScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Image
+        source={{
+          uri: "https://files.oaiusercontent.com/file-jKehW7qlJgYLajG51dpnQ4Yu?se=2024-05-20T01%3A23%3A09Z&sp=r&sv=2023-11-03&sr=b&rscc=max-age%3D31536000%2C%20immutable&rscd=attachment%3B%20filename%3De5adf30c-dcdd-4a16-8c25-bd9efe4321ee.webp&sig=ZepjUyvS60xKl3YQeDlOImGeCmQAOa3UYQ/PJlM%2B7RI%3D",
+        }}
+        style={styles.logo}
+      />
       <Pressable style={styles.button} onPress={() => promptAsync()}>
         <Text style={styles.buttonText}>Sign In With Google</Text>
       </Pressable>
@@ -80,7 +86,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#f0f4f8",
+  },
+  logo: {
+    width: 200,
+    height: 200,
+    marginBottom: 20,
   },
   button: {
     paddingHorizontal: 20,
@@ -88,16 +99,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#1a73e8",
     borderRadius: 5,
     marginBottom: 10,
+    width: "80%",
+    alignItems: "center",
   },
   guestButton: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: "#777",
+    backgroundColor: "#555",
     borderRadius: 5,
+    width: "80%",
+    alignItems: "center",
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "bold",
   },
 });
 
