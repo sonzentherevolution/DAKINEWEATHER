@@ -8,10 +8,10 @@ import {
   ScrollView,
   Image,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { handleVote } from "../api/app";
 
 const WeatherDetailScreen = ({ route }) => {
-  const { town } = route.params;
+  const { town, updateWeatherData } = route.params;
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [possibleConditions, setPossibleConditions] = useState([
@@ -37,6 +37,7 @@ const WeatherDetailScreen = ({ route }) => {
   }, [town.name]);
 
   const fetchWeather = async () => {
+    setLoading(true);
     try {
       const response = await fetch(
         `http://localhost:5001/api/weather/${encodeURIComponent(town.name)}`
@@ -47,33 +48,6 @@ const WeatherDetailScreen = ({ route }) => {
       console.error("Failed to fetch weather data", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleVote = async (condition) => {
-    const userId = await AsyncStorage.getItem("userId");
-    try {
-      const response = await fetch("http://localhost:5001/vote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, location: town.name, condition }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        console.log(data.message);
-        // Trigger mock votes
-        await fetch("http://localhost:5001/mock/add-mock-votes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ location: town.name, condition }),
-        });
-        // Fetch updated weather data after voting
-        fetchWeather();
-      } else {
-        console.error("Failed to record vote", data);
-      }
-    } catch (error) {
-      console.error("Failed to record vote", error);
     }
   };
 
@@ -114,7 +88,16 @@ const WeatherDetailScreen = ({ route }) => {
 
           <TouchableOpacity
             style={styles.voteButton}
-            onPress={() => handleVote(weather.condition)}
+            onPress={async () => {
+              await handleVote(
+                town.name,
+                weather.condition,
+                fetchWeather,
+                updateWeatherData
+              );
+              await fetchWeather(); // Refresh the current weather data
+              updateWeatherData(); // Notify HomeScreen to update
+            }}
           >
             <Text style={styles.voteButtonText}>
               Vote for Current Condition
@@ -127,7 +110,16 @@ const WeatherDetailScreen = ({ route }) => {
               <TouchableOpacity
                 style={[styles.conditionButton, { backgroundColor: color }]}
                 key={condition}
-                onPress={() => handleVote(condition)}
+                onPress={async () => {
+                  await handleVote(
+                    town.name,
+                    condition,
+                    fetchWeather,
+                    updateWeatherData
+                  );
+                  await fetchWeather(); // Refresh the current weather data
+                  updateWeatherData(); // Notify HomeScreen to update
+                }}
               >
                 <Image
                   style={styles.weatherIcon}

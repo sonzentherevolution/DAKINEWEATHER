@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import WeatherTownItem from "../components/WeatherTownItem";
 
@@ -50,6 +51,16 @@ export default function HomeScreen({
     navigation.navigate("SignIn");
   };
 
+  const updateWeatherData = useCallback(() => {
+    handleRefresh();
+  }, [handleRefresh]);
+
+  useFocusEffect(
+    useCallback(() => {
+      handleRefresh();
+    }, [handleRefresh])
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -91,6 +102,7 @@ export default function HomeScreen({
                       key={index}
                       town={town}
                       navigation={navigation}
+                      updateWeatherData={updateWeatherData}
                     />
                   ))}
                 </View>

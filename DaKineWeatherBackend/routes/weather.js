@@ -1,8 +1,11 @@
 const express = require("express");
 const axios = require("axios");
 const Weather = require("../models/Weather");
+const Vote = require("../models/Vote");
 
 const router = express.Router();
+
+const VOTE_THRESHOLD = 3; // Set your threshold here
 
 async function fetchWeatherData(location) {
   try {
@@ -29,24 +32,55 @@ async function fetchWeatherData(location) {
   }
 }
 
+async function fetchConditionFromVotes(location) {
+  try {
+    const votes = await Vote.find({ location });
+    const conditionCount = {};
+
+    votes.forEach((vote) => {
+      if (!conditionCount[vote.condition]) {
+        conditionCount[vote.condition] = 0;
+      }
+      conditionCount[vote.condition] += 1;
+    });
+
+    const maxVotes = Math.max(...Object.values(conditionCount));
+    if (maxVotes >= VOTE_THRESHOLD) {
+      const aggregatedCondition = Object.keys(conditionCount).reduce((a, b) =>
+        conditionCount[a] > conditionCount[b] ? a : b
+      );
+      return aggregatedCondition;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching condition from votes:", error);
+    return null;
+  }
+}
+
 router.get("/api/weather/:location", async (req, res) => {
   const location = decodeURIComponent(req.params.location).replace(/ʻ/g, "'");
   console.log(`Fetching weather data for location: ${location}`);
 
   try {
+    let condition = await fetchConditionFromVotes(location);
     const weatherData = await fetchWeatherData(location);
-    if (weatherData) {
-      const formattedWeatherData = {
-        condition: weatherData.weather[0].main,
-        temp: weatherData.main.temp,
-        humidity: weatherData.main.humidity,
-        windSpeed: weatherData.wind.speed,
-        location: location,
-      };
-      res.json(formattedWeatherData);
-    } else {
-      res.status(500).json({ error: "Failed to fetch weather data" });
+
+    if (!weatherData) {
+      return res.status(500).json({ error: "Failed to fetch weather data" });
     }
+
+    const formattedWeatherData = {
+      condition: condition || weatherData.weather[0].main,
+      temp: weatherData.main.temp,
+      humidity: weatherData.main.humidity,
+      windSpeed: weatherData.wind.speed,
+      location: location,
+      icon: weatherData.weather[0].icon,
+    };
+
+    res.json(formattedWeatherData);
   } catch (error) {
     console.error(`Failed to fetch weather data for ${location}:`, error);
     res.status(500).json({ error: "Failed to fetch weather data" });
@@ -56,15 +90,46 @@ router.get("/api/weather/:location", async (req, res) => {
 router.get("/weather-by-town", async (req, res) => {
   let { townName } = req.query;
   const apiKey = process.env.OPEN_WEATHER_API_KEY;
-  const fallbackTownName = "Lihue";
-  const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${townName.replace(
-    /ʻ/g,
-    "'"
-  )}&appid=${apiKey}&units=metric`;
 
   try {
-    const response = await axios.get(apiUrl);
-    res.json(response.data);
+    // First, check the database for votes
+    let condition = await fetchConditionFromVotes(townName);
+
+    // Fetch weather data from the external API for the temperature
+    const response = await axios.get(
+      `https://api.openweathermap.org/data/2.5/weather?q=${townName.replace(
+        /ʻ/g,
+        "'"
+      )}&appid=${apiKey}&units=metric`
+    );
+    const weatherData = response.data;
+
+    // Save the fetched data to the database if not already present
+    const existingWeather = await Weather.findOne({ location: townName });
+    if (!existingWeather) {
+      const newWeatherData = new Weather({
+        location: townName,
+        condition: weatherData.weather[0].main,
+        temp: weatherData.main.temp,
+        humidity: weatherData.main.humidity,
+        windSpeed: weatherData.wind.speed,
+        icon: weatherData.weather[0].icon,
+      });
+
+      await newWeatherData.save();
+    }
+
+    // Use vote-based condition if available, otherwise use fetched condition
+    const formattedWeatherData = {
+      condition: condition || weatherData.weather[0].main,
+      temp: weatherData.main.temp,
+      humidity: weatherData.main.humidity,
+      windSpeed: weatherData.wind.speed,
+      location: townName,
+      icon: weatherData.weather[0].icon,
+    };
+
+    res.json(formattedWeatherData);
   } catch (error) {
     console.error(
       `Error fetching weather data for ${townName}:`,
@@ -72,9 +137,9 @@ router.get("/weather-by-town", async (req, res) => {
     );
 
     if (error.response && error.response.status === 404) {
-      console.log(`Trying fallback town: ${fallbackTownName}`);
+      console.log(`Trying fallback town: Lihue`);
       try {
-        const fallbackWeatherData = await fetchWeatherData(fallbackTownName);
+        const fallbackWeatherData = await fetchWeatherData("Lihue");
         if (fallbackWeatherData) {
           res.json(fallbackWeatherData);
         } else {
@@ -84,7 +149,7 @@ router.get("/weather-by-town", async (req, res) => {
         }
       } catch (fallbackError) {
         console.error(
-          `Error fetching weather data for fallback town ${fallbackTownName}:`,
+          `Error fetching weather data for fallback town Lihue:`,
           fallbackError
         );
         res

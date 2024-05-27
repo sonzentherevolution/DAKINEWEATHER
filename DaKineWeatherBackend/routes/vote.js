@@ -4,7 +4,7 @@ const Weather = require("../models/Weather");
 const User = require("../models/User");
 
 const router = express.Router();
-const VOTE_THRESHOLD = 10;
+const VOTE_THRESHOLD = 3;
 const VOTE_CAP = 5; // Max number of votes per user per hour
 
 // Middleware to enforce voting cap

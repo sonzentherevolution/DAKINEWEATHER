@@ -12,13 +12,15 @@ export const AuthProvider = ({ children }) => {
     AsyncStorage.getItem("userToken").then(setUserToken);
   }, []);
 
-  const signIn = async (token) => {
+  const signIn = async (token, userId) => {
     await AsyncStorage.setItem("userToken", token);
+    await AsyncStorage.setItem("userId", userId);
     setUserToken(token);
   };
 
   const signOut = async () => {
     await AsyncStorage.removeItem("userToken");
+    await AsyncStorage.removeItem("userId");
     setUserToken(null);
   };
 
@@ -35,7 +37,7 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
       if (response.ok) {
-        await signIn(data.userToken);
+        await signIn(data.userToken, data.userId);
       } else {
         console.error("Google sign-in error:", data.message);
       }

@@ -20,7 +20,7 @@ const SignInScreen = ({ navigation }) => {
           `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`
         );
         const data = await response.json();
-        console.log("User info response data:", data); // Log the response from userinfo endpoint
+        console.log("User info response data:", data);
         return data;
       } catch (error) {
         console.error("Error fetching user info:", error);
@@ -29,12 +29,12 @@ const SignInScreen = ({ navigation }) => {
     };
 
     if (response?.type === "success") {
-      console.log("Google response:", response); // Log the entire response object
+      console.log("Google response:", response);
       const accessToken = response.authentication?.accessToken;
-      console.log("Access Token:", accessToken); // Log the access token to verify
+      console.log("Access Token:", accessToken);
       if (accessToken) {
         fetchUserInfo(accessToken).then((userInfo) => {
-          console.log("Fetched User Info:", userInfo); // Log the user info to verify
+          console.log("Fetched User Info:", userInfo);
           handleGoogleSignIn(userInfo);
           navigation.navigate("Home");
         });
@@ -56,7 +56,8 @@ const SignInScreen = ({ navigation }) => {
       }
       const data = await response.json();
       await AsyncStorage.setItem("guestId", data.guestId);
-      console.log("Guest ID:", data.guestId); // Log the guest ID
+      await AsyncStorage.setItem("userId", data.guestId);
+      console.log("Guest ID:", data.guestId);
       navigation.navigate("Home");
     } catch (error) {
       console.error("Error signing in as guest:", error);

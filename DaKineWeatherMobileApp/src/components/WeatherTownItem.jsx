@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import api from "../api/app";
 
-const TownWeatherItem = ({ town, navigation }) => {
+const WeatherTownItem = ({ town, navigation, updateWeatherData }) => {
   const [weatherData, setWeatherData] = useState(null);
 
   console.log("Rendering WeatherTownItem:", town.name); // Check if the component is being rendered
@@ -17,7 +17,11 @@ const TownWeatherItem = ({ town, navigation }) => {
           const response = await api.get(
             `/weather-by-town?townName=${encodedTownName}`
           );
-          // console.log("API Test Successful, response:", response);
+          console.log(
+            "Weather data fetched for town:",
+            town.name,
+            response.data
+          ); // Log the fetched data
           setWeatherData(response.data);
         } catch (error) {
           console.error("API Error:", error);
@@ -52,34 +56,40 @@ const TownWeatherItem = ({ town, navigation }) => {
   return (
     <TouchableOpacity
       onPress={() =>
-        navigation.navigate("WeatherDetails", { town, weatherData })
+        navigation.navigate("WeatherDetails", {
+          town,
+          weatherData,
+          updateWeatherData,
+        })
       }
     >
       <View
         style={[
           styles.townContainer,
-          weatherData ? getWeatherStyles(weatherData.weather[0].main) : {},
+          weatherData ? getWeatherStyles(weatherData.condition) : {},
         ]}
       >
         <Text style={styles.townName}>{town.name}</Text>
         <Text style={styles.townDetails}>{town.vicinity}</Text>
         <Text style={styles.postalCode}>{town.postal}</Text>
-        {weatherData && (
+        {weatherData ? (
           <View>
             <Text style={styles.townDetails}>
               Temperature:{" "}
-              {convertCelsiusToFahrenheit(weatherData.main.temp).toFixed(1)}°F
+              {convertCelsiusToFahrenheit(weatherData.temp).toFixed(1)}°F
             </Text>
             <Text style={styles.townDetails}>
-              Weather: {weatherData.weather[0].description}
+              Weather: {weatherData.condition}
             </Text>
             <Image
               style={styles.weatherIcon}
               source={{
-                uri: `http://openweathermap.org/img/wn/${weatherData.weather[0].icon}.png`,
+                uri: `http://openweathermap.org/img/wn/${weatherData.icon}.png`,
               }}
             />
           </View>
+        ) : (
+          <Text style={styles.townDetails}>Loading weather data...</Text>
         )}
       </View>
     </TouchableOpacity>
@@ -133,4 +143,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TownWeatherItem;
+export default WeatherTownItem;
