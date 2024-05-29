@@ -8,7 +8,7 @@ import { OAUTH_WEB_CLIENT_ID, OAUTH_IOS_CLIENT_ID } from "@env";
 import * as Location from "expo-location";
 import { registerRootComponent } from "expo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fetchGeocode, fetchNearbyPlaces } from "./api/app";
+import { fetchGeocode, fetchNearbyPlaces } from "./api";
 import { AuthProvider } from "./context/AuthContext";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";

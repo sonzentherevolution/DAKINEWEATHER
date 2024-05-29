@@ -8,7 +8,7 @@ import {
   ScrollView,
   Image,
 } from "react-native";
-import { handleVote } from "../api/app";
+import { handleVote } from "../api";
 
 const WeatherDetailScreen = ({ route }) => {
   const { town, updateWeatherData } = route.params;
@@ -33,23 +33,16 @@ const WeatherDetailScreen = ({ route }) => {
   ]);
 
   useEffect(() => {
-    fetchWeather();
-  }, [town.name]);
-
-  const fetchWeather = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `http://localhost:5001/api/weather/${encodeURIComponent(town.name)}`
-      );
-      const data = await response.json();
-      setWeather(data);
-    } catch (error) {
-      console.error("Failed to fetch weather data", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const downloadWeather = (town) => {
+      try {
+        const weather = fetchWeather(town);
+        setWeatherData(weather);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    downloadWeather(town);
+  }, [town]);
 
   if (loading) {
     return (

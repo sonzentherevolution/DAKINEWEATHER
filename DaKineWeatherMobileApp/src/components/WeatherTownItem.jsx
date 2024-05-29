@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
-import api from "../api/app";
+import { fetchWeather } from "../api";
 
 const WeatherTownItem = ({ town, navigation, updateWeatherData }) => {
   const [weatherData, setWeatherData] = useState(null);
@@ -8,28 +8,36 @@ const WeatherTownItem = ({ town, navigation, updateWeatherData }) => {
   console.log("Rendering WeatherTownItem:", town.name); // Check if the component is being rendered
 
   useEffect(() => {
-    const fetchWeather = async () => {
-      if (town) {
-        const modifiedTownName = town.name.replace(/ʻ/g, "'");
-        const encodedTownName = encodeURIComponent(modifiedTownName);
+    // const fetchWeather = async () => {
+    //   if (town) {
+    //     const modifiedTownName = town.name.replace(/ʻ/g, "'");
+    //     const encodedTownName = encodeURIComponent(modifiedTownName);
 
-        try {
-          const response = await api.get(
-            `/weather-by-town?townName=${encodedTownName}`
-          );
-          console.log(
-            "Weather data fetched for town:",
-            town.name,
-            response.data
-          ); // Log the fetched data
-          setWeatherData(response.data);
-        } catch (error) {
-          console.error("API Error:", error);
-        }
+    //     try {
+    //       const response = await api.get(
+    //         `/weather-by-town?townName=${encodedTownName}`
+    //       );
+    //       console.log(
+    //         "Weather data fetched for town:",
+    //         town.name,
+    //         response.data
+    //       ); // Log the fetched data
+    //       setWeatherData(response.data);
+    //     } catch (error) {
+    //       console.error("API Error:", error);
+    //     }
+    //   }
+    // };
+
+    const downloadWeather = (town) => {
+      try {
+        const weather = fetchWeather(town);
+        setWeatherData(weather);
+      } catch (error) {
+        console.log(error);
       }
     };
-
-    fetchWeather();
+    downloadWeather(town);
   }, [town]);
 
   const convertCelsiusToFahrenheit = (celsius) => {
