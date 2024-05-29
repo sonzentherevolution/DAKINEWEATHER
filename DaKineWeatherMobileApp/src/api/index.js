@@ -60,10 +60,11 @@ export const handleVote = async (
     const response = await fetch("http://localhost:5001/vote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, location, condition }),
+      body: JSON.stringify({ userId, location: location.name, condition }),
     });
     const data = await response.json();
     if (data.success) {
+      console.log("location from api handle vote", location);
       console.log(data.message);
       // Trigger mock votes
       // await fetch("http://localhost:5001/mock/add-mock-votes", {
@@ -72,7 +73,7 @@ export const handleVote = async (
       //   body: JSON.stringify({ location, condition }),
       // });
       // Fetch updated weather data after voting
-      await fetchWeather();
+      await fetchWeather(location);
       // Notify the home screen to update
       updateWeatherData();
     } else {
@@ -83,7 +84,7 @@ export const handleVote = async (
   }
 };
 
-const fetchWeather = async (town) => {
+export const fetchWeather = async (town) => {
   if (town) {
     const modifiedTownName = replaceOkinaWithApostrophe(town.name);
     const encodedTownName = encodeURIComponent(modifiedTownName);
@@ -92,7 +93,7 @@ const fetchWeather = async (town) => {
       `/weather-by-town?townName=${encodedTownName}`
     );
     console.log("Weather data fetched for town:", town.name, response.data); // Log the fetched data
-    return response.data;
+    return { name: town.name, ...response.data };
   } else throw new Error("No Town Provided");
 };
 

@@ -8,7 +8,7 @@ import {
   ScrollView,
   Image,
 } from "react-native";
-import { handleVote } from "../api";
+import { handleVote, fetchWeather } from "../api";
 
 const WeatherDetailScreen = ({ route }) => {
   const { town, updateWeatherData } = route.params;
@@ -33,10 +33,11 @@ const WeatherDetailScreen = ({ route }) => {
   ]);
 
   useEffect(() => {
-    const downloadWeather = (town) => {
+    const downloadWeather = async (town) => {
       try {
-        const weather = fetchWeather(town);
-        setWeatherData(weather);
+        const weather = await fetchWeather(town);
+        setWeather(weather);
+        setLoading(false);
       } catch (error) {
         console.log(error);
       }
@@ -82,13 +83,14 @@ const WeatherDetailScreen = ({ route }) => {
           <TouchableOpacity
             style={styles.voteButton}
             onPress={async () => {
+              console.log("vote for ", town);
               await handleVote(
-                town.name,
+                town,
                 weather.condition,
                 fetchWeather,
                 updateWeatherData
               );
-              await fetchWeather(); // Refresh the current weather data
+              await fetchWeather(town); // Refresh the current weather data
               updateWeatherData(); // Notify HomeScreen to update
             }}
           >
@@ -105,12 +107,12 @@ const WeatherDetailScreen = ({ route }) => {
                 key={condition}
                 onPress={async () => {
                   await handleVote(
-                    town.name,
+                    town,
                     condition,
                     fetchWeather,
                     updateWeatherData
                   );
-                  await fetchWeather(); // Refresh the current weather data
+                  await fetchWeather(town); // Refresh the current weather data
                   updateWeatherData(); // Notify HomeScreen to update
                 }}
               >
