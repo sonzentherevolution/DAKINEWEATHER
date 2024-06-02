@@ -9,14 +9,41 @@ const VOTE_THRESHOLD = 3; // Set your threshold here
 
 async function fetchWeatherData(location) {
   try {
+    // Check the cache (database) first
+    let cachedWeather = await Weather.findOne({ location }).sort({
+      updatedAt: -1,
+    });
+
+    if (cachedWeather) {
+      console.log(`Cache hit for ${location}`);
+      cachedWeather.source = "cache"; // Adding a source attribute to indicate cache
+      return cachedWeather;
+    }
+
+    // If not found in cache, fetch from API
     const response = await axios.get(
       `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${process.env.OPEN_WEATHER_API_KEY}&units=metric`
     );
     console.log(
-      `Weather data fetched successfully for ${location}:`,
+      `Weather data fetched successfully for ${location} from API`,
       response.data
     );
-    return response.data;
+
+    const weatherData = {
+      location,
+      condition: response.data.weather[0].main,
+      temp: response.data.main.temp,
+      humidity: response.data.main.humidity,
+      windSpeed: response.data.wind.speed,
+      icon: response.data.weather[0].icon,
+      source: "api", // Adding a source attribute to indicate API
+    };
+
+    // Save fetched data to cache (database)
+    const newWeather = new Weather(weatherData);
+    await newWeather.save();
+
+    return weatherData;
   } catch (error) {
     console.error(
       `Error fetching weather data for ${location}:`,
@@ -72,13 +99,16 @@ router.get("/api/weather/:location", async (req, res) => {
     }
 
     const formattedWeatherData = {
-      condition: condition || weatherData.weather[0].main,
-      temp: weatherData.main.temp,
-      humidity: weatherData.main.humidity,
-      windSpeed: weatherData.wind.speed,
+      condition: condition || weatherData.condition,
+      temp: weatherData.temp,
+      humidity: weatherData.humidity,
+      windSpeed: weatherData.windSpeed,
       location: location,
-      icon: weatherData.weather[0].icon,
+      icon: weatherData.icon,
+      source: weatherData.source, // Adding source to the response
     };
+
+    console.log(`Rendered data source for ${location}: ${weatherData.source}`);
 
     res.json(formattedWeatherData);
   } catch (error) {
@@ -96,24 +126,19 @@ router.get("/weather-by-town", async (req, res) => {
     let condition = await fetchConditionFromVotes(townName);
 
     // Fetch weather data from the external API for the temperature
-    const response = await axios.get(
-      `https://api.openweathermap.org/data/2.5/weather?q=${townName.replace(
-        /ʻ/g,
-        "'"
-      )}&appid=${apiKey}&units=metric`
-    );
-    const weatherData = response.data;
+    let weatherData = await fetchWeatherData(townName);
 
     // Save the fetched data to the database if not already present
     const existingWeather = await Weather.findOne({ location: townName });
-    if (!existingWeather) {
+    if (!existingWeather && weatherData.source === "api") {
       const newWeatherData = new Weather({
         location: townName,
-        condition: weatherData.weather[0].main,
-        temp: weatherData.main.temp,
-        humidity: weatherData.main.humidity,
-        windSpeed: weatherData.wind.speed,
-        icon: weatherData.weather[0].icon,
+        condition: weatherData.condition,
+        temp: weatherData.temp,
+        humidity: weatherData.humidity,
+        windSpeed: weatherData.windSpeed,
+        icon: weatherData.icon,
+        source: "api", // Adding source attribute to indicate API
       });
 
       await newWeatherData.save();
@@ -121,13 +146,18 @@ router.get("/weather-by-town", async (req, res) => {
 
     // Use vote-based condition if available, otherwise use fetched condition
     const formattedWeatherData = {
-      condition: condition || weatherData.weather[0].main,
-      temp: weatherData.main.temp,
-      humidity: weatherData.main.humidity,
-      windSpeed: weatherData.wind.speed,
+      condition: condition || weatherData.condition,
+      temp: weatherData.temp,
+      humidity: weatherData.humidity,
+      windSpeed: weatherData.windSpeed,
       location: townName,
-      icon: weatherData.weather[0].icon,
+      icon: weatherData.icon,
+      source: weatherData.source, // Indicate source of data
     };
+
+    console.log(
+      `Rendered data source for ${townName}: ${formattedWeatherData.source}`
+    );
 
     res.json(formattedWeatherData);
   } catch (error) {
@@ -172,6 +202,7 @@ router.post("/api/weather/upvote/:location", async (req, res) => {
     if (weather) {
       console.log(`Current rank for ${location}: ${weather.rank}`);
       weather.rank += 1;
+      weather.updatedAt = Date.now(); // Extend TTL by updating updatedAt
       await weather.save();
       console.log(`New rank for ${location}: ${weather.rank}`);
       res.json(weather);
@@ -196,6 +227,7 @@ router.post("/api/weather/select/:location", async (req, res) => {
     if (weather) {
       weather.condition = status;
       weather.rank += 1;
+      weather.updatedAt = Date.now(); // Extend TTL by updating updatedAt
       await weather.save();
       console.log(
         `Weather status updated for ${location}: ${status}, new rank: ${weather.rank}`
