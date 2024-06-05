@@ -83,7 +83,6 @@ const WeatherDetailScreen = ({ route }) => {
           <TouchableOpacity
             style={styles.voteButton}
             onPress={async () => {
-              console.log("vote for ", town);
               await handleVote(
                 town,
                 weather.condition,

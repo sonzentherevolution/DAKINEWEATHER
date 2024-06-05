@@ -11,8 +11,6 @@ const VOTE_CAP = 5; // Max number of votes per user per hour
 const voteCapMiddleware = async (req, res, next) => {
   const { userId, location } = req.body;
 
-  console.log("Vote cap middleware called with userId:", userId);
-
   if (!userId) {
     return res.status(400).json({ error: "userId is required" });
   }
@@ -25,8 +23,6 @@ const voteCapMiddleware = async (req, res, next) => {
       location,
       timestamp: { $gte: oneHourAgo },
     });
-
-    console.log("Recent votes count:", recentVotes.length);
 
     if (recentVotes.length >= VOTE_CAP) {
       return res
@@ -44,8 +40,6 @@ const voteCapMiddleware = async (req, res, next) => {
 router.post("/vote", voteCapMiddleware, async (req, res) => {
   const { userId, location, condition } = req.body;
 
-  console.log("Vote endpoint called with:", req.body);
-
   try {
     const vote = new Vote({
       userId,
@@ -55,30 +49,44 @@ router.post("/vote", voteCapMiddleware, async (req, res) => {
     });
     await vote.save();
 
-    const voteCount = await Vote.countDocuments({ location, condition });
+    const votes = await Vote.find({ location });
+    const conditionCount = {};
 
-    console.log("Current vote count:", voteCount);
+    for (let vote of votes) {
+      const user = await User.findById(vote.userId);
+      const influence = user ? user.userScore : 1; // Use user score as vote influence
+
+      if (!conditionCount[vote.condition]) {
+        conditionCount[vote.condition] = 0;
+      }
+      conditionCount[vote.condition] += influence;
+    }
+
+    const aggregatedCondition = Object.keys(conditionCount).reduce((a, b) =>
+      conditionCount[a] > conditionCount[b] ? a : b
+    );
+
+    const voteCount = Object.values(conditionCount).reduce((a, b) => a + b, 0);
 
     if (voteCount >= VOTE_THRESHOLD) {
-      const votes = await Vote.find({ location });
-      const conditionCount = {};
-
-      votes.forEach((vote) => {
-        if (!conditionCount[vote.condition]) {
-          conditionCount[vote.condition] = 0;
-        }
-        conditionCount[vote.condition] += 1;
-      });
-
-      const aggregatedCondition = Object.keys(conditionCount).reduce((a, b) =>
-        conditionCount[a] > conditionCount[b] ? a : b
-      );
-
       const weather = await Weather.findOneAndUpdate(
         { location },
         { condition: aggregatedCondition, rank: voteCount },
         { new: true, upsert: true }
       );
+
+      // Update user scores for correct votes
+      const correctVotes = await Vote.find({
+        location,
+        condition: aggregatedCondition,
+      });
+      for (let vote of correctVotes) {
+        const user = await User.findById(vote.userId);
+        if (user) {
+          user.userScore += 1; // Increment score for correct votes
+          await user.save();
+        }
+      }
 
       res.json({
         success: true,

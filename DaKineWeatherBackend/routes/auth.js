@@ -8,35 +8,51 @@ const router = express.Router();
 router.post("/guest-login", async (req, res) => {
   const ipAddress =
     req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-  const guestId = uuidv4();
 
-  const user = new User({ guestId, ipAddress });
-  await user.save();
+  try {
+    // Check if a user with this IP address already exists
+    let user = await User.findOne({ ipAddress });
+    let returning = !!user;
+    if (!user) {
+      const guestId = uuidv4();
+      user = new User({ guestId, ipAddress, userScore: 1 }); // Default score for guests
+      await user.save();
+      returning = false;
+    }
 
-  res.json({ guestId });
+    // Generate JWT token
+    const userToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.json({ userToken, userId: user._id, returning });
+  } catch (error) {
+    console.error("Guest login error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 router.post("/google-login", async (req, res) => {
   const userInfo = req.body;
 
-  console.log("Received user info:", userInfo);
-
   try {
     const { sub: googleId, email } = userInfo;
 
-    let user = await User.findOne({ googleId });
+    // Check if a user with this Google ID or email already exists
+    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+    const returning = !!user;
     if (!user) {
-      user = new User({ googleId, email });
+      user = new User({ googleId, email, userScore: 10 }); // Higher default score for Google sign-ins
       await user.save();
     }
 
+    // Generate JWT token
     const userToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
-    res.json({ userToken });
+    res.json({ userToken, userId: user._id, returning });
   } catch (error) {
     console.error("Google login error:", error.message);
-    console.error("Full error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });

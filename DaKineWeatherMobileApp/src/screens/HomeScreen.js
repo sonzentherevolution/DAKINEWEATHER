@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   View,
+  Animated,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -19,12 +20,33 @@ export default function HomeScreen({
   errorMsg,
   towns,
   onRefresh,
+  route,
 }) {
   const [refreshing, setRefreshing] = useState(false);
   const [guestId, setGuestId] = useState(null);
   const [userToken, setUserToken] = useState(null);
+  const [userScore, setUserScore] = useState(0);
+  const [welcomeOpacity] = useState(new Animated.Value(0));
 
   useEffect(() => {
+    const fetchUserScore = async () => {
+      const userId = await AsyncStorage.getItem("userId");
+      if (!userId) {
+        console.error("User ID is missing");
+        return;
+      }
+      try {
+        const response = await fetch(`http://localhost:5001/user/${userId}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setUserScore(data.userScore);
+      } catch (error) {
+        console.error("Error fetching user score:", error);
+      }
+    };
+
     AsyncStorage.getItem("userToken").then((token) => {
       setUserToken(token);
       if (!token) {
@@ -35,7 +57,24 @@ export default function HomeScreen({
           }
         });
       }
+      fetchUserScore();
     });
+
+    if (route.params?.returning) {
+      Animated.timing(welcomeOpacity, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }).start(() => {
+        setTimeout(() => {
+          Animated.timing(welcomeOpacity, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }).start();
+        }, 2000);
+      });
+    }
   }, []);
 
   const handleRefresh = useCallback(() => {
@@ -74,6 +113,16 @@ export default function HomeScreen({
           <TouchableOpacity style={styles.button} onPress={handleSignOut}>
             <Text style={styles.buttonText}>Sign Out</Text>
           </TouchableOpacity>
+        </View>
+
+        <Animated.View
+          style={[styles.welcomeBackContainer, { opacity: welcomeOpacity }]}
+        >
+          <Text style={styles.welcomeBackText}>Welcome Back!</Text>
+        </Animated.View>
+
+        <View style={styles.userScoreContainer}>
+          <Text style={styles.userScoreText}>User Score: {userScore}</Text>
         </View>
 
         {errorMsg ? (
@@ -179,5 +228,26 @@ const styles = StyleSheet.create({
   },
   townList: {
     marginBottom: 20,
+  },
+  welcomeBackContainer: {
+    marginVertical: 20,
+    padding: 10,
+    backgroundColor: "#d4edda",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  welcomeBackText: {
+    fontSize: 18,
+    color: "#155724",
+    fontWeight: "bold",
+  },
+  userScoreContainer: {
+    marginVertical: 10,
+    alignItems: "center",
+  },
+  userScoreText: {
+    fontSize: 18,
+    color: "#20315f",
+    fontWeight: "bold",
   },
 });

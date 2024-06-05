@@ -6,7 +6,7 @@ import { OAUTH_WEB_CLIENT_ID, OAUTH_IOS_CLIENT_ID } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SignInScreen = ({ navigation }) => {
-  const { handleGoogleSignIn } = useAuth();
+  const { handleGoogleSignIn, signIn } = useAuth();
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: OAUTH_IOS_CLIENT_ID,
     webClientId: OAUTH_WEB_CLIENT_ID,
@@ -15,12 +15,10 @@ const SignInScreen = ({ navigation }) => {
   useEffect(() => {
     const fetchUserInfo = async (accessToken) => {
       try {
-        console.log("Fetching user info using access token:", accessToken);
         const response = await fetch(
           `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`
         );
         const data = await response.json();
-        console.log("User info response data:", data);
         return data;
       } catch (error) {
         console.error("Error fetching user info:", error);
@@ -29,14 +27,12 @@ const SignInScreen = ({ navigation }) => {
     };
 
     if (response?.type === "success") {
-      console.log("Google response:", response);
       const accessToken = response.authentication?.accessToken;
-      console.log("Access Token:", accessToken);
       if (accessToken) {
         fetchUserInfo(accessToken).then((userInfo) => {
-          console.log("Fetched User Info:", userInfo);
-          handleGoogleSignIn(userInfo);
-          navigation.navigate("Home");
+          handleGoogleSignIn(userInfo).then((returning) => {
+            navigation.navigate("Home", { returning });
+          });
         });
       } else {
         Alert.alert("Error", "Failed to retrieve access token");
@@ -55,10 +51,8 @@ const SignInScreen = ({ navigation }) => {
         throw new Error("Network response was not ok");
       }
       const data = await response.json();
-      await AsyncStorage.setItem("guestId", data.guestId);
-      await AsyncStorage.setItem("userId", data.guestId);
-      console.log("Guest ID:", data.guestId);
-      navigation.navigate("Home");
+      await signIn(data.userToken, data.userId);
+      navigation.navigate("Home", { returning: data.returning });
     } catch (error) {
       console.error("Error signing in as guest:", error);
     }

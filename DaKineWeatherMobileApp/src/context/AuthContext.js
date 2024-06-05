@@ -26,7 +26,6 @@ export const AuthProvider = ({ children }) => {
 
   const handleGoogleSignIn = async (userInfo) => {
     try {
-      console.log("Sending user info to backend:", userInfo);
       const response = await fetch("http://localhost:5001/google-login", {
         method: "POST",
         headers: {
@@ -38,11 +37,14 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
       if (response.ok) {
         await signIn(data.userToken, data.userId);
+        return data.returning;
       } else {
         console.error("Google sign-in error:", data.message);
+        return false;
       }
     } catch (error) {
       console.error("Google sign-in error:", error);
+      return false;
     }
   };
 
