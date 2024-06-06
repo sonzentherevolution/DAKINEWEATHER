@@ -1,5 +1,12 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, Pressable, Alert, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Alert,
+  ImageBackground,
+} from "react-native";
 import * as Google from "expo-auth-session/providers/google";
 import { useAuth } from "../context/AuthContext";
 import { OAUTH_WEB_CLIENT_ID, OAUTH_IOS_CLIENT_ID } from "@env";
@@ -59,33 +66,49 @@ const SignInScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Image
-        source={{
-          uri: "https://files.oaiusercontent.com/file-jKehW7qlJgYLajG51dpnQ4Yu?se=2024-05-20T01%3A23%3A09Z&sp=r&sv=2023-11-03&sr=b&rscc=max-age%3D31536000%2C%20immutable&rscd=attachment%3B%20filename%3De5adf30c-dcdd-4a16-8c25-bd9efe4321ee.webp&sig=ZepjUyvS60xKl3YQeDlOImGeCmQAOa3UYQ/PJlM%2B7RI%3D",
-        }}
-        style={styles.logo}
-      />
-      <Pressable style={styles.button} onPress={() => promptAsync()}>
-        <Text style={styles.buttonText}>Sign In With Google</Text>
-      </Pressable>
-      <Pressable style={styles.guestButton} onPress={signInAsGuest}>
-        <Text style={styles.buttonText}>Sign In As Guest</Text>
-      </Pressable>
-    </View>
+    <ImageBackground
+      source={{
+        uri: "https://images.unsplash.com/photo-1489914099268-1dad649f76bf?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      }}
+      style={styles.background}
+    >
+      <View style={styles.overlay}>
+        <Text style={styles.title}>Welcome to Okina Weather</Text>
+        <Text style={styles.subtitle}>Your ultimate weather companion</Text>
+        <Pressable style={styles.button} onPress={() => promptAsync()}>
+          <Text style={styles.buttonText}>Sign In With Google</Text>
+        </Pressable>
+        <Pressable style={styles.guestButton} onPress={signInAsGuest}>
+          <Text style={styles.buttonText}>Sign In As Guest</Text>
+        </Pressable>
+      </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f4f8",
   },
-  logo: {
-    width: 200,
-    height: 200,
+  overlay: {
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    padding: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: "#fff",
     marginBottom: 20,
   },
   button: {
