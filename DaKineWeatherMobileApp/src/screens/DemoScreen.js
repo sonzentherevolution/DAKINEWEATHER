@@ -1,3 +1,4 @@
+// src/screens/DemoScreen.js
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -11,7 +12,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-const DemoScreen = () => {
+export default DemoScreen = () => {
   const [votes, setVotes] = useState({
     Clear: 0,
     Clouds: 0,
@@ -28,20 +29,21 @@ const DemoScreen = () => {
   const navigation = useNavigation();
 
   const weatherStatuses = [
-    { name: "Clear", icon: "01d", color: "#FDB813" },
-    { name: "Clouds", icon: "02d", color: "#A9A9A9" },
-    { name: "Rain", icon: "09d", color: "#4BACC6" },
-    { name: "Drizzle", icon: "10d", color: "#4BACC6" },
-    { name: "Thunderstorm", icon: "11d", color: "#FFD700" },
-    { name: "Snow", icon: "13d", color: "#FFFFFF" },
+    { name: "Clear", icon: "01d", color: "#FDB813", textColor: "#333" },
+    { name: "Clouds", icon: "02d", color: "#A9A9A9", textColor: "#fff" },
+    { name: "Rain", icon: "09d", color: "#4BACC6", textColor: "#fff" },
+    { name: "Drizzle", icon: "10d", color: "#4BACC6", textColor: "#fff" },
+    { name: "Thunderstorm", icon: "11d", color: "#FFD700", textColor: "#333" },
+    { name: "Snow", icon: "13d", color: "#FFFFFF", textColor: "#333" },
   ];
 
   const handleVote = (status) => {
     const newVotes = { ...votes, [status]: votes[status] + 1 };
     setVotes(newVotes);
 
+    // Check if user votes are enough to override service data
     const totalVotes = Object.values(newVotes).reduce((sum, v) => sum + v, 0);
-    const threshold = 3;
+    const threshold = 3; // Lower threshold for demonstration purposes
 
     if (totalVotes >= threshold) {
       const newCondition = Object.keys(newVotes).reduce((a, b) =>
@@ -53,6 +55,7 @@ const DemoScreen = () => {
       setUseServiceData(true);
     }
 
+    // Pulse effect
     Animated.sequence([
       Animated.timing(animatedValue, {
         toValue: 1.2,
@@ -66,6 +69,7 @@ const DemoScreen = () => {
       }),
     ]).start();
 
+    // Animate vote count
     voteAnimValue.setValue(0);
     Animated.timing(voteAnimValue, {
       toValue: 1,
@@ -73,6 +77,7 @@ const DemoScreen = () => {
       useNativeDriver: true,
     }).start();
 
+    // Animate condition change
     conditionAnimValue.setValue(0);
     Animated.timing(conditionAnimValue, {
       toValue: 1,
@@ -81,9 +86,9 @@ const DemoScreen = () => {
     }).start();
   };
 
-  const currentConditionIcon = weatherStatuses.find(
+  const currentConditionData = weatherStatuses.find(
     (status) => status.name === currentCondition
-  )?.icon;
+  );
 
   useEffect(() => {
     Animated.timing(conditionAnimValue, {
@@ -106,9 +111,26 @@ const DemoScreen = () => {
           How Community Voting Updates Weather
         </Text>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Current Weather Condition</Text>
-          <Text style={styles.description}>
+        <View
+          style={[
+            styles.section,
+            { backgroundColor: currentConditionData?.color || "#fff" },
+          ]}
+        >
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: currentConditionData?.textColor || "#000" },
+            ]}
+          >
+            Current Weather Condition
+          </Text>
+          <Text
+            style={[
+              styles.description,
+              { color: currentConditionData?.textColor || "#000" },
+            ]}
+          >
             The weather condition is set based on:
           </Text>
           <Animated.View
@@ -130,13 +152,25 @@ const DemoScreen = () => {
             <Image
               style={styles.currentWeatherIcon}
               source={{
-                uri: `https://openweathermap.org/img/wn/${currentConditionIcon}@2x.png`,
+                uri: `https://openweathermap.org/img/wn/${currentConditionData?.icon}@2x.png`,
               }}
             />
-            <Text style={styles.currentConditionText}>
+            <Text
+              style={[
+                styles.currentConditionText,
+                { color: currentConditionData?.textColor || "#000" },
+              ]}
+            >
               {currentCondition}{" "}
               {!useServiceData && (
-                <Text style={styles.userVoteLabel}>(Community Votes)</Text>
+                <Text
+                  style={[
+                    styles.userVoteLabel,
+                    { color: currentConditionData?.textColor || "#000" },
+                  ]}
+                >
+                  (Community Votes)
+                </Text>
               )}
             </Text>
           </Animated.View>
@@ -154,7 +188,7 @@ const DemoScreen = () => {
             Your vote helps to reflect the actual weather condition:
           </Text>
           <View style={styles.conditionsContainer}>
-            {weatherStatuses.map(({ name, icon, color }) => (
+            {weatherStatuses.map(({ name, icon, color, textColor }) => (
               <TouchableOpacity
                 key={name}
                 style={[styles.conditionButton, { backgroundColor: color }]}
@@ -176,10 +210,13 @@ const DemoScreen = () => {
                     }}
                   />
                 </Animated.View>
-                <Text style={styles.conditionText}>{name}</Text>
+                <Text style={[styles.conditionText, { color: textColor }]}>
+                  {name}
+                </Text>
                 <Animated.Text
                   style={{
                     ...styles.voteCount,
+                    color: textColor,
                     opacity: voteAnimValue,
                     transform: [
                       {
@@ -249,21 +286,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
     lineHeight: 40,
-    textShadowColor: "rgba(0, 0, 0, 0.75)",
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10,
   },
   subtitle: {
     fontSize: 18,
     color: "#fff",
     marginBottom: 20,
     textAlign: "center",
-    textShadowColor: "rgba(0, 0, 0, 0.75)",
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10,
   },
   section: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 15,
     width: "90%",
@@ -279,7 +310,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
     textAlign: "center",
-    color: "#20315f",
   },
   description: {
     fontSize: 16,
@@ -298,7 +328,6 @@ const styles = StyleSheet.create({
   currentConditionText: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#333",
   },
   userVoteLabel: {
     fontSize: 14,
@@ -306,7 +335,7 @@ const styles = StyleSheet.create({
   },
   serviceLabel: {
     fontSize: 14,
-    color: "#FF5733",
+    color: "#FFD700",
     marginTop: 10,
     textAlign: "center",
   },
@@ -321,11 +350,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     position: "relative",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.6,
-    shadowRadius: 3,
-    elevation: 6,
   },
   weatherIcon: {
     width: 50,
@@ -333,13 +357,11 @@ const styles = StyleSheet.create({
   },
   conditionText: {
     fontSize: 16,
-    color: "#000",
     marginTop: 5,
     fontWeight: "bold",
   },
   voteCount: {
     fontSize: 14,
-    color: "#fff",
     marginTop: 5,
   },
   checkmarkContainer: {
@@ -371,5 +393,3 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-
-export default DemoScreen;
