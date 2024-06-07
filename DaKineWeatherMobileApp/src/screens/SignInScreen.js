@@ -73,14 +73,39 @@ const SignInScreen = ({ navigation }) => {
       style={styles.background}
     >
       <View style={styles.overlay}>
-        <Text style={styles.title}>Welcome to Okina Weather</Text>
+        <Text style={styles.title}>
+          Welcome to{" "}
+          <Text style={styles.logoInline}>
+            Ōkīna <Text style={styles.raindropInline}>ʻ</Text> Weather
+          </Text>
+        </Text>
         <Text style={styles.subtitle}>Your ultimate weather companion</Text>
-        <Pressable style={styles.button} onPress={() => promptAsync()}>
+        <Text style={styles.features}>
+          <Text style={styles.icon}>☀️ </Text>Real-time weather updates{"\n"}
+          <Text style={styles.icon}>⛅ </Text>Personalized forecasts{"\n"}
+          <Text style={styles.icon}>⚠️ </Text>Weather alerts
+        </Text>
+
+        <Pressable style={styles.buttonGoogle} onPress={() => promptAsync()}>
           <Text style={styles.buttonText}>Sign In With Google</Text>
         </Pressable>
-        <Pressable style={styles.guestButton} onPress={signInAsGuest}>
+        <Pressable style={styles.buttonGuest} onPress={signInAsGuest}>
           <Text style={styles.buttonText}>Sign In As Guest</Text>
         </Pressable>
+
+        <Pressable
+          style={styles.buttonDemo}
+          onPress={() => navigation.navigate("Demo")}
+        >
+          <Text style={styles.buttonText}>See a Demo</Text>
+        </Pressable>
+
+        <Text
+          style={styles.learnMore}
+          onPress={() => navigation.navigate("LearnMore")}
+        >
+          Learn more about Ōkīna Weather
+        </Text>
       </View>
     </ImageBackground>
   );
@@ -93,7 +118,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   overlay: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
@@ -105,33 +130,88 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#fff",
     marginBottom: 10,
+    textAlign: "center",
+    lineHeight: 40,
+  },
+  logoInline: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  raindropInline: {
+    color: "#4FC3F7",
   },
   subtitle: {
     fontSize: 18,
     color: "#fff",
     marginBottom: 20,
+    textAlign: "center",
   },
-  button: {
+  features: {
+    fontSize: 16,
+    color: "#fff",
+    textAlign: "center",
+    marginBottom: 30,
+  },
+  icon: {
+    fontSize: 20,
+  },
+  buttonGoogle: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: "#1a73e8",
-    borderRadius: 5,
-    marginBottom: 10,
+    paddingVertical: 12,
+    backgroundColor: "#4285F4",
+    borderRadius: 25,
+    marginBottom: 15,
     width: "80%",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.6,
+    shadowRadius: 3,
+    elevation: 6,
+    justifyContent: "center",
+    background: "linear-gradient(90deg, #4285F4 0%, #34A853 100%)",
   },
-  guestButton: {
+  buttonGuest: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: "#555",
-    borderRadius: 5,
+    paddingVertical: 12,
+    backgroundColor: "#8E8E93",
+    borderRadius: 25,
     width: "80%",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.6,
+    shadowRadius: 3,
+    elevation: 6,
+    justifyContent: "center",
+  },
+  buttonDemo: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: "#FF5733", // Different color to make it stand out
+    borderRadius: 25,
+    width: "80%",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.6,
+    shadowRadius: 3,
+    elevation: 6,
+    justifyContent: "center",
+    marginTop: 15,
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  learnMore: {
+    fontSize: 14,
+    color: "#A0A0A0",
+    textAlign: "center",
+    marginTop: 20,
+    textDecorationLine: "underline",
   },
 });
 
