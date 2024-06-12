@@ -11,6 +11,7 @@ import * as Google from "expo-auth-session/providers/google";
 import { useAuth } from "../context/AuthContext";
 import { OAUTH_WEB_CLIENT_ID, OAUTH_IOS_CLIENT_ID } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native"; // Import navigation hook
 
 const SignInScreen = ({ navigation }) => {
   const { handleGoogleSignIn, signIn } = useAuth();
@@ -100,12 +101,12 @@ const SignInScreen = ({ navigation }) => {
           <Text style={styles.buttonText}>See a Demo</Text>
         </Pressable>
 
-        <Text
-          style={styles.learnMore}
-          onPress={() => navigation.navigate("LearnMore")}
+        <Pressable
+          style={styles.buttonLearnMore}
+          onPress={() => navigation.navigate("LearnMore")} // Navigate to Learn More
         >
-          Learn more about Ōkīna Weather
-        </Text>
+          <Text style={styles.buttonText}>Learn More</Text>
+        </Pressable>
       </View>
     </ImageBackground>
   );
@@ -189,7 +190,22 @@ const styles = StyleSheet.create({
   buttonDemo: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: "#FF5733", // Different color to make it stand out
+    backgroundColor: "#FF5733",
+    borderRadius: 25,
+    width: "80%",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.6,
+    shadowRadius: 3,
+    elevation: 6,
+    justifyContent: "center",
+    marginTop: 15,
+  },
+  buttonLearnMore: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: "#FFA500", // Different color to stand out
     borderRadius: 25,
     width: "80%",
     alignItems: "center",

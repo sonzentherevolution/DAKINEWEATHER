@@ -6,6 +6,7 @@ import HomeScreen from "./screens/HomeScreen";
 import SignInScreen from "./screens/SignInScreen";
 import WeatherDetailScreen from "./screens/WeatherDetailScreen";
 import DemoScreen from "./screens/DemoScreen"; // Import the DemoScreen component
+import LearnMoreScreen from "./screens/LearnMoreScreen"; // Import the LearnMoreScreen component
 import { OAUTH_WEB_CLIENT_ID, OAUTH_IOS_CLIENT_ID } from "@env";
 import * as Location from "expo-location";
 import { registerRootComponent } from "expo";
@@ -104,6 +105,7 @@ function App() {
             options={{ headerShown: false }}
           />
           <Stack.Screen name="Demo" component={DemoScreen} />
+          <Stack.Screen name="LearnMore" component={LearnMoreScreen} />
           <Stack.Screen name="Home">
             {(props) => (
               <HomeScreen

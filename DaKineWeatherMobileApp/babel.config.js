@@ -10,6 +10,7 @@ module.exports = function (api) {
           path: ".env",
         },
       ],
+      "react-native-reanimated/plugin", // Ensure this is included
     ],
   };
 };
