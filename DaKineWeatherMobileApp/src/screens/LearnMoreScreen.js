@@ -13,6 +13,7 @@ import Animated, {
   withTiming,
   withDelay,
   withSequence,
+  withSpring,
 } from "react-native-reanimated";
 
 const screenWidth = Dimensions.get("window").width;
@@ -22,7 +23,7 @@ const LearnMoreScreen = () => {
   const [currentSection, setCurrentSection] = useState(-1);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Shared values for letters
+  // Shared values for letters (ʻOkina Weather logo animation)
   const fadeAnimLetters = [
     useSharedValue(1), // ʻ
     useSharedValue(1), // O
@@ -43,12 +44,19 @@ const LearnMoreScreen = () => {
   const okinaScale = useSharedValue(1);
   const raindropFadeAnim = useSharedValue(0);
 
+  // Shared values for content animations
+  const contentOpacity = useSharedValue(0);
+  const emojiScale = useSharedValue(0);
+  const emojiRotate = useSharedValue(0);
+
   useEffect(() => {
     if (currentSection === -1) {
       // Delay the start of the initial animation by 2 seconds
       setTimeout(() => {
         startInitialAnimation();
       }, 1500);
+    } else {
+      startContentAnimation();
     }
   }, [currentSection]);
 
@@ -85,6 +93,20 @@ const LearnMoreScreen = () => {
     setIsAnimating(false);
   };
 
+  const startContentAnimation = () => {
+    setIsAnimating(true);
+
+    contentOpacity.value = withTiming(1, { duration: 500 });
+    emojiScale.value = withSpring(1, { mass: 0.5, stiffness: 120 });
+    emojiRotate.value = withSequence(
+      withTiming(-10, { duration: 100 }),
+      withTiming(10, { duration: 100 }),
+      withTiming(0, { duration: 100 })
+    );
+
+    setIsAnimating(false);
+  };
+
   const handleNext = () => {
     if (!isAnimating) {
       setIsAnimating(true);
@@ -92,11 +114,9 @@ const LearnMoreScreen = () => {
         raindropFadeAnim.value = withTiming(0, { duration: 300 });
         setCurrentSection((prev) => prev + 1);
       } else {
-        fadeAnimLetters.forEach(
-          (anim) => (anim.value = withTiming(1, { duration: 300 }))
-        );
-        okinaTranslateX.value = withTiming(0, { duration: 300 });
-        okinaScale.value = withTiming(1, { duration: 300 });
+        contentOpacity.value = withTiming(0, { duration: 300 });
+        emojiScale.value = withTiming(0, { duration: 300 });
+        emojiRotate.value = withTiming(0, { duration: 300 });
         setCurrentSection((prev) =>
           prev < sections.length - 1 ? prev + 1 : 0
         );
@@ -127,6 +147,17 @@ const LearnMoreScreen = () => {
     ],
   }));
 
+  const contentStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+  }));
+
+  const emojiStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: emojiScale.value },
+      { rotate: `${emojiRotate.value}deg` },
+    ],
+  }));
+
   const renderLogoAnimation = () => (
     <View style={styles.logoAnimationContainer}>
       <View style={styles.logoContainer}>
@@ -149,9 +180,12 @@ const LearnMoreScreen = () => {
   );
 
   const renderContent = () => (
-    <Animated.View style={{ ...styles.content, opacity: 1 }}>
+    <Animated.View style={[styles.content, contentStyle]}>
       <Text style={styles.title}>
-        {sections[currentSection]?.title} {sections[currentSection]?.emojis}
+        {sections[currentSection]?.title}{" "}
+        <Animated.Text style={[styles.emoji, emojiStyle]}>
+          {sections[currentSection]?.emojis}
+        </Animated.Text>
       </Text>
       <Text style={styles.text}>{sections[currentSection]?.content}</Text>
       <TouchableOpacity style={styles.guideButton} onPress={handleNext}>
@@ -164,44 +198,44 @@ const LearnMoreScreen = () => {
 
   const sections = [
     {
-      title: "Ōkina Weather: Previously Da Kine Weather",
+      title: "ʻOkina Weather: Previously Da Kine Weather",
       content:
-        "Ōkina Weather, previously known as Da Kine Weather, is an app designed to provide accurate weather updates for towns. 🌦️ We transitioned to the name Ōkina Weather to better reflect our commitment to cultural understanding and the unique character of the Hawaiian language. The ʻokina, which resembles a raindrop, is a symbol of our focus on local relevance and precision in weather forecasting. 🌧️",
+        "ʻOkina Weather, previously known as Da Kine Weather, is an app designed to provide accurate weather updates for towns. 🌦️ We transitioned to the name ʻOkina Weather to better reflect our commitment to cultural understanding and the unique character of the Hawaiian language. The ʻokina, which resembles a raindrop, is a symbol of our focus on local relevance and precision in weather forecasting. 🌧️",
       guideText: "Learn more about our journey!",
       emojis: "🌦️🌧️",
     },
     {
-      title: "The Beginning of Ōkina Weather",
+      title: "The Beginning of ʻOkina Weather",
       content:
-        "Ōkina Weather began as a project at Dev Island. 🎓 Our goal was to create something that could genuinely help local businesses and people by providing accurate weather information. 📱 Imagine having a simple, reliable way to check the weather, especially in places where it's tricky to predict. We started as Da Kine Weather, focusing on local relevance and community input.",
+        "ʻOkina Weather began as a project at Dev Island. 🎓 Our goal was to create something that could genuinely help local businesses and people by providing accurate weather information. 📱 Imagine having a simple, reliable way to check the weather, especially in places where it's tricky to predict. We started as Da Kine Weather, focusing on local relevance and community input.",
       guideText: "Learn about our mission!",
       emojis: "🌧️📱",
     },
     {
       title: "The Mystery of the ʻOkina",
       content:
-        "Our app initially struggled to fetch weather data for Kapaʻa, a town with a special character in its name: the ʻokina. 🧐 Despite multiple attempts with AI, the issue remained unresolved. I was ready to spend weeks figuring it out. Then, a few days earlier, a friend had explained that the ʻokina is not just an apostrophe; it's a unique character in the Hawaiian language. This suddenly clicked in my mind, and I realized the computer didn't recognize the ʻokina as a unique character. That insight solved the problem! This realization also inspired our rebranding to Ōkina Weather, where the ʻokina symbolizes a raindrop, aligning perfectly with our focus. 👥",
+        "Our app initially struggled to fetch weather data for Kapaʻa, a town with a special character in its name: the ʻokina. 🧐 Despite multiple attempts with AI, the issue remained unresolved. I was ready to spend weeks figuring it out. Then, a few days prior, a friend had explained that the ʻokina is not just an apostrophe; it's a unique character in the Hawaiian language. This suddenly clicked in my mind, and I realized the computer didn't recognize the ʻokina as a unique character. That insight solved the problem! This realization also inspired our rebranding to ʻOkina Weather, where the ʻokina symbolizes a raindrop, aligning perfectly with our focus. 👥",
       guideText: "Discover how a simple insight made a big difference!",
       emojis: "🧠👥",
     },
     {
       title: "Power of Community Input",
       content:
-        "Ōkina Weather isn't just about technology; it's about people. Our app thrives on community input. Users share their weather reports, 🗳️ making the app more accurate and useful. It's a collective effort where everyone's input helps create a better tool. 🌟",
+        "ʻOkina Weather isn't just about technology; it's about people. Our app thrives on community input. Users share their weather reports, 🗳️ making the app more accurate and useful. It's a collective effort where everyone's input helps create a better tool. 🌟",
       guideText: "See how community input shapes our app!",
       emojis: "🌟🗳️",
     },
     {
       title: "Inspiring Future Developers",
       content:
-        "Ōkina Weather is more than an app; it's a story of resilience and creativity. 🚀 We want to inspire future developers to see challenges as opportunities. 🌱 Remember, facing tough problems helps you grow, and your unique ideas can make a big impact. 💪",
+        "ʻOkina Weather is more than an app; it's a story of resilience and creativity. 🚀 We want to inspire future developers to see challenges as opportunities. 🌱 Remember, facing tough problems helps you grow, and your unique ideas can make a big impact. 💪",
       guideText: "Be inspired to innovate and create!",
       emojis: "🚀🌱",
     },
     {
       title: "Embracing the Age of AI",
       content:
-        "As we step into the AI era, things are advancing faster than ever. 🌐 AI gives us the power to bring our ideas to life quickly, turning dreams into reality in months instead of years. 🌟 But while AI is a powerful tool that accelerates innovation, it's the human touch that makes the real difference. Your creativity and insights are irreplaceable. 🧠 And that's the story of how we solved a unique issue and how Ōkina Weather got its name as a tribute to my peers stepping into the age of AI as software developers.",
+        "As we step into the AI era, things are advancing faster than ever. 🌐 AI gives us the power to bring our ideas to life quickly, turning dreams into reality in months instead of years. 🌟 But while AI is a powerful tool that accelerates innovation, it's the human touch that makes the real difference. Your creativity and insights are irreplaceable. 🧠 And that's the story of how we solved a unique issue and how ʻOkina Weather got its name as a tribute to my peers stepping into the age of AI as software developers.",
       guideText: "Explore how AI can help you achieve your dreams!",
       emojis: "🤖💻",
     },
@@ -214,7 +248,7 @@ const LearnMoreScreen = () => {
       ) : (
         <>
           <Animated.View style={[styles.textLogo, { opacity: 1 }]}>
-            <Text style={styles.textLogoMain}>Ōkina Weather</Text>
+            <Text style={styles.textLogoMain}>ʻOkina Weather</Text>
             <Text style={styles.textLogoSub}>Discover Our Journey</Text>
           </Animated.View>
 

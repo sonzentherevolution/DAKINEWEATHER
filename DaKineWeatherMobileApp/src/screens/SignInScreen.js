@@ -77,7 +77,7 @@ const SignInScreen = ({ navigation }) => {
         <Text style={styles.title}>
           Welcome to{" "}
           <Text style={styles.logoInline}>
-            Ōkīna <Text style={styles.raindropInline}>ʻ</Text> Weather
+            <Text style={styles.raindropInline}>ʻ</Text>Okina Weather
           </Text>
         </Text>
         <Text style={styles.subtitle}>Your ultimate weather companion</Text>
